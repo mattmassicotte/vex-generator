@@ -1,0 +1,10 @@
+[package]
+name = "vex-generator"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies.vex]
+path = "../vex"
+
+[dependencies.nom]
+version = "7"
