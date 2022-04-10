@@ -16,7 +16,7 @@ pub enum PatternNode<'a> {
 
 	Group(Box<PatternNode<'a>>),
 	Field(&'a str, Box<PatternNode<'a>>),
-	// NegatedField(&'a str),
+	NegatedField(&'a str),
 	//
 	// Capture(&'a str, Box<PatternNode<'a>>),
 	//
@@ -100,7 +100,8 @@ fn parse_node<'a>(i: &'a str) -> IResult<&'a str, PatternNode> {
 		parse_anonymous,
 		parse_wildcard,
 		parse_anchor,
-		parse_group
+		parse_group,
+		parse_negated_field
 	))(i)
 }
 
@@ -133,4 +134,16 @@ fn parse_field<'a>(i: &'a str) -> IResult<&'a str, PatternNode> {
 fn field_test() {
 	assert_eq!(parse_field("label:name"), Ok(("", PatternNode::Field("label", Box::new(PatternNode::Name("name"))))));
 	assert_eq!(parse_field("label: name"), Ok(("", PatternNode::Field("label", Box::new(PatternNode::Name("name"))))));
+}
+
+fn parse_negated_field<'a>(i: &'a str) -> IResult<&'a str, PatternNode> {
+	map(
+		preceded(tag("!"), parse_identifier),
+		|name| PatternNode::NegatedField(name)
+	)(i)
+}
+
+#[test]
+fn negated_field_test() {
+	assert_eq!(parse_negated_field("!name"), Ok(("", PatternNode::NegatedField("name"))));
 }
