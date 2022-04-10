@@ -1,9 +1,10 @@
 use nom::{
 	branch::{alt},
+	bytes::complete::tag,
 	combinator::{value, map},
-	character::complete::{char, alpha1},
+	character::complete::{char, alpha1, multispace0},
 	IResult,
-	sequence::delimited,
+	sequence::{delimited, preceded, tuple, terminated},
 };
 
 #[derive(Clone, Debug, PartialEq)]
@@ -14,7 +15,7 @@ pub enum PatternNode<'a> {
 	Anchor,
 
 	Group(Box<PatternNode<'a>>),
-	// Field(&'a str, Box<PatternNode<'a>>),
+	Field(&'a str, Box<PatternNode<'a>>),
 	// NegatedField(&'a str),
 	//
 	// Capture(&'a str, Box<PatternNode<'a>>),
@@ -24,6 +25,10 @@ pub enum PatternNode<'a> {
 	// Optional(Box<PatternNode<'a>>),
 	//
 	// Directive(&'a str, Vec<&'a str>),
+}
+
+fn parse_identifier<'a>(i: &'a str) -> IResult<&'a str, &'a str> {
+	preceded(multispace0, terminated(alpha1, multispace0))(i)
 }
 
 fn parse_string<'a>(i: &'a str) -> IResult<&'a str, &'a str> {
@@ -41,7 +46,7 @@ fn string_test() {
 
 fn parse_name<'a>(i: &'a str) -> IResult<&'a str, PatternNode> {
 	map(
-		alpha1,
+		parse_identifier,
 		|value: &str| PatternNode::Name(value),
 	)(i)
 }
@@ -49,6 +54,8 @@ fn parse_name<'a>(i: &'a str) -> IResult<&'a str, PatternNode> {
 #[test]
 fn parse_name_test() {
 	assert_eq!(parse_name("abc"), Ok(("", PatternNode::Name("abc"))));
+	assert_eq!(parse_name("  abc"), Ok(("", PatternNode::Name("abc"))));
+	assert_eq!(parse_name("abc  "), Ok(("", PatternNode::Name("abc"))));
 }
 
 fn parse_anonymous<'a>(i: &'a str) -> IResult<&'a str, PatternNode> {
@@ -72,7 +79,7 @@ fn parse_wildcard<'a>(i: &'a str) -> IResult<&'a str, PatternNode> {
 
 #[test]
 fn wildcard_test() {
-  assert_eq!(parse_wildcard("_"), Ok(("", PatternNode::Wildcard)));
+	assert_eq!(parse_wildcard("_"), Ok(("", PatternNode::Wildcard)));
 }
 
 fn parse_anchor<'a>(i: &'a str) -> IResult<&'a str, PatternNode> {
@@ -84,7 +91,7 @@ fn parse_anchor<'a>(i: &'a str) -> IResult<&'a str, PatternNode> {
 
 #[test]
 fn anchor_test() {
-  assert_eq!(parse_anchor("."), Ok(("", PatternNode::Anchor)));
+	assert_eq!(parse_anchor("."), Ok(("", PatternNode::Anchor)));
 }
 
 fn parse_node<'a>(i: &'a str) -> IResult<&'a str, PatternNode> {
@@ -92,7 +99,8 @@ fn parse_node<'a>(i: &'a str) -> IResult<&'a str, PatternNode> {
 		parse_name,
 		parse_anonymous,
 		parse_wildcard,
-		parse_anchor
+		parse_anchor,
+		parse_group
 	))(i)
 }
 
@@ -109,5 +117,20 @@ fn parse_group<'a>(i: &'a str) -> IResult<&'a str, PatternNode> {
 
 #[test]
 fn group_test() {
-  assert_eq!(parse_group("(name)"), Ok(("", PatternNode::Group(Box::new(PatternNode::Name("name"))))));
+	assert_eq!(parse_group("(name)"), Ok(("", PatternNode::Group(Box::new(PatternNode::Name("name"))))));
+}
+
+fn parse_field<'a>(i: &'a str) -> IResult<&'a str, PatternNode> {
+	let field_name = terminated(parse_identifier, tag(":"));
+
+	map(
+		tuple((field_name, parse_node)),
+		|(name, node)| PatternNode::Field(name, Box::new(node))
+	)(i)
+}
+
+#[test]
+fn field_test() {
+	assert_eq!(parse_field("label:name"), Ok(("", PatternNode::Field("label", Box::new(PatternNode::Name("name"))))));
+	assert_eq!(parse_field("label: name"), Ok(("", PatternNode::Field("label", Box::new(PatternNode::Name("name"))))));
 }
