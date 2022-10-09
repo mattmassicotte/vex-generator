@@ -11,7 +11,7 @@ use nom::{
 	sequence::{delimited, preceded, tuple, terminated, pair},
 };
 
-use super::basic::{parse_identifier, parse_string};
+use super::basic::{parse_comment, parse_identifier, parse_string};
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum DirectiveComponent<'a> {
@@ -38,26 +38,6 @@ pub enum PatternNode<'a> {
 
 	Group(Vec<PatternNode<'a>>),
 	Alternation(Vec<PatternNode<'a>>),
-}
-
-// utilities
-fn parse_comment<'a>(i: &'a str) -> IResult<&'a str, ()> {
-	value(
-		(),
-		many0(
-			pair(
-				char(';'),
-				terminated(not_line_ending, multispace0)
-			)
-		)
-	)(i)
-}
-
-#[test]
-fn comment_test() {
-  assert_eq!(parse_comment(";abcdef\n"), Ok(("", ())));
-  assert_eq!(parse_comment(";\n"), Ok(("", ())));
-  assert_eq!(parse_comment(";a\n;b\n;c\n"), Ok(("", ())));
 }
 
 // basic node types

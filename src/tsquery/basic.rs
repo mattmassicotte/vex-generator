@@ -1,10 +1,11 @@
 use nom::{
 	branch::{alt},
-	combinator::{recognize},
-	character::complete::{alpha1, alphanumeric1, char, one_of},
+	combinator::{recognize, value},
+	character::streaming::{not_line_ending},
+	character::complete::{alpha1, alphanumeric1, char, one_of, multispace0},
 	IResult,
 	multi::many0_count,
-	sequence::{delimited, pair},
+	sequence::{delimited, pair, terminated},
 	bytes::complete::tag,
 };
 
@@ -38,4 +39,23 @@ pub fn parse_string<'a>(i: &'a str) -> IResult<&'a str, &'a str> {
 #[test]
 fn string_test() {
   assert_eq!(parse_string(r#""abc""#), Ok(("", "abc")));
+}
+
+pub fn parse_comment<'a>(i: &'a str) -> IResult<&'a str, ()> {
+	value(
+		(),
+		many0_count(
+			pair(
+				char(';'),
+				terminated(not_line_ending, multispace0)
+			)
+		)
+	)(i)
+}
+
+#[test]
+fn comment_test() {
+  assert_eq!(parse_comment(";abcdef\n"), Ok(("", ())));
+  assert_eq!(parse_comment(";\n"), Ok(("", ())));
+  assert_eq!(parse_comment(";a\n;b\n;c\n"), Ok(("", ())));
 }
