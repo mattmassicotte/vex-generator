@@ -4,6 +4,7 @@ pub mod parser;
 mod tests {
 	use std::path::PathBuf;
 	use std::fs;
+	use super::parser::parse_pattern;
 
 	fn resource_path(name: &str) -> PathBuf {
 		let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
@@ -23,7 +24,9 @@ mod tests {
 	fn node_with_children() {
 		let data = resource_data("node_with_children.scm");
 
-		println!("{}", data);
+		let result = parse_pattern(&data);
+
+		println!("result: {:?}", result);
 
 		let result = 2 + 2;
 		assert_eq!(result, 4);
