@@ -11,6 +11,8 @@ use nom::{
 	sequence::{delimited, preceded, tuple, terminated, pair},
 };
 
+use super::basic::{parse_identifier, parse_string};
+
 #[derive(Clone, Debug, PartialEq)]
 pub enum DirectiveComponent<'a> {
 	Capture(&'a str),
@@ -39,25 +41,6 @@ pub enum PatternNode<'a> {
 }
 
 // utilities
-fn parse_identifier<'a>(i: &'a str) -> IResult<&'a str, &'a str> {
-	// take_while(alpha1)(i)
-	alpha1(i)
-	// take_while(|c| is_alphabetic(c))(i)
-}
-
-fn parse_string<'a>(i: &'a str) -> IResult<&'a str, &'a str> {
-	delimited(
-		char('"'),
-		alpha1,
-		char('"')
-	)(i)
-}
-
-#[test]
-fn string_test() {
-  assert_eq!(parse_string(r#""abc""#), Ok(("", "abc")));
-}
-
 fn parse_comment<'a>(i: &'a str) -> IResult<&'a str, ()> {
 	value(
 		(),
