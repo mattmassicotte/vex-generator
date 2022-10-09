@@ -7,7 +7,7 @@ use nom::{
 	character::streaming::{not_line_ending, line_ending},
 	character::complete::{alpha1, alphanumeric1, char, multispace0, multispace1, one_of},
 	IResult,
-	multi::{many_till},
+	multi::{many_till, many0},
 	sequence::{delimited, preceded, tuple, terminated, pair},
 };
 
@@ -61,9 +61,11 @@ fn string_test() {
 fn parse_comment<'a>(i: &'a str) -> IResult<&'a str, ()> {
 	value(
 		(),
-		pair(
-			char(';'),
-			terminated(not_line_ending, line_ending)
+		many0(
+			pair(
+				char(';'),
+				terminated(not_line_ending, multispace0)
+			)
 		)
 	)(i)
 }
@@ -71,6 +73,8 @@ fn parse_comment<'a>(i: &'a str) -> IResult<&'a str, ()> {
 #[test]
 fn comment_test() {
   assert_eq!(parse_comment(";abcdef\n"), Ok(("", ())));
+  assert_eq!(parse_comment(";\n"), Ok(("", ())));
+  assert_eq!(parse_comment(";a\n;b\n;c\n"), Ok(("", ())));
 }
 
 // basic node types
@@ -132,10 +136,12 @@ fn parse_non_capturable_node<'a>(i: &'a str) -> IResult<&'a str, PatternNode> {
 }
 
 fn parse_node<'a>(i: &'a str) -> IResult<&'a str, PatternNode> {
-	alt((
+	let node_parser = alt((
 		parse_node_with_capture,
 		parse_non_capturable_node,
-	))(i)
+	));
+	
+	preceded(opt(parse_comment), terminated(node_parser, opt(parse_comment)))(i)
 }
 
 fn parse_alternation<'a>(i: &'a str) -> IResult<&'a str, PatternNode> {
