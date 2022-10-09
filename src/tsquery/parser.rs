@@ -1,9 +1,10 @@
 use nom::{
 	branch::{alt},
 	bytes::complete::{tag},
+	bytes::streaming::{take_until1, take_while},
 	combinator::{map, opt, value},
 	character::{is_alphabetic},
-	character::streaming::{alpha1 as salpha},
+	character::streaming::{not_line_ending, line_ending},
 	character::complete::{alpha1, alphanumeric1, char, multispace0, multispace1, one_of},
 	IResult,
 	multi::{many_till},
@@ -55,6 +56,21 @@ fn parse_string<'a>(i: &'a str) -> IResult<&'a str, &'a str> {
 #[test]
 fn string_test() {
   assert_eq!(parse_string(r#""abc""#), Ok(("", "abc")));
+}
+
+fn parse_comment<'a>(i: &'a str) -> IResult<&'a str, ()> {
+	value(
+		(),
+		pair(
+			char(';'),
+			terminated(not_line_ending, line_ending)
+		)
+	)(i)
+}
+
+#[test]
+fn comment_test() {
+  assert_eq!(parse_comment(";abcdef\n"), Ok(("", ())));
 }
 
 // basic node types
