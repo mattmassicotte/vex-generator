@@ -1,14 +1,11 @@
 use nom::{
 	branch::{alt},
 	bytes::complete::{tag},
-	bytes::streaming::{take_until1, take_while},
 	combinator::{map, opt, value},
-	character::{is_alphabetic},
-	character::streaming::{not_line_ending, line_ending},
-	character::complete::{alpha1, alphanumeric1, char, multispace0, multispace1, one_of},
+	character::complete::{alpha1, char, multispace0},
 	IResult,
-	multi::{many_till, many0},
-	sequence::{delimited, preceded, tuple, terminated, pair},
+	multi::{many_till},
+	sequence::{preceded, tuple, terminated, pair},
 };
 
 use super::basic::{parse_comment, parse_identifier, parse_string};

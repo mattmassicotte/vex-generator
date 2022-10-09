@@ -2,7 +2,7 @@ use nom::{
 	branch::{alt},
 	combinator::{recognize, value},
 	character::streaming::{not_line_ending},
-	character::complete::{alpha1, alphanumeric1, char, one_of, multispace0},
+	character::complete::{alpha1, alphanumeric1, char, multispace0},
 	IResult,
 	multi::many0_count,
 	sequence::{delimited, pair, terminated},
